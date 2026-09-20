@@ -17,7 +17,7 @@ body:
         * `QC`: Modification of QuakeC source code.
         * `AUDIO`: Modification of game sound effects or music.
         * `WADS`: Modification of **map** textures, to be packed into a `.wad` during the build process.
-
+        <a href="1/">Page 1</a>
         See "[CONTRIBUTING.md](LibreQuad/CONTRIBUTING.md)" for details.
 
 - type: checkboxes
