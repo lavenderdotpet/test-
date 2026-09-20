@@ -1,39 +1,12 @@
-name: "Pull Request"
-description: please replace "prefix" with one of the ones listed below
-title: "prefix: "
-labels: ["documentation", "bug"]
+name: "Step 1: Report a problem or need"
+description: Please start here and describe your situation.
+title: "problem: "
+labels: ["problem", "impact/unknown"]
 body:
-- type: html
+- type: markdown
   attributes:
     value: |
-        <head>
-        <base href="https://www.w3schools.com/" target="_blank">
-        </head>
-
-        <body>
-        <img src="images/stickman.gif" width="24" height="39" alt="Stickman">
-        <a href="tags/tag_base.asp">HTML base Tag</a>
-        </body>
-
-- type: checkboxes
-  id: type
-  attributes:
-    label: Operating System
-    description: Which OS are you running LibreWolf on?
-    options:
-    - label: audio
-    - label: gfx
-    - label: models
-    - label: quakec
-    - label: NixOS
-    - label: wads Linux
-    - label: BSD
-    - label: wip
-
-- type: textarea
-  id: description
-  attributes:
-    label: Description
-    description: Please describe the bug clearly.
-  validations:
-    required: true
+        <a href="?template=.github/PULL_REQUEST_TEMPLATE/bugfix.yaml">e</a>
+        <a href="?template=.github/PULL_REQUEST_TEMPLATE/docs.yaml">e</a>
+        <a href="?template=.github/PULL_REQUEST_TEMPLATE/feature.yaml">e</a>
+        <a href="?template=.github/PULL_REQUEST_TEMPLATE/hotfix.yaml">e</a>
