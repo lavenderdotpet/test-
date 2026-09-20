@@ -1,0 +1,171 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - '.github/workflows/build_release.yml'
+      - '.github/scripts/**'
+      - 'lq1/**'
+      - 'qsrc/**'
+      - 'texture-wads/**'
+      - 'build.py'
+      - 'build_releases.json'
+      - 'build_components.json'
+
+env:
+  PYTHONUNBUFFERED: 1
+
+# Cancel redundant builds on the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_wads:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: bash -x .github/scripts/install_deps.sh
+    - name: Build wads
+      run: python3 build.py --compile-wads
+    - name: Upload texture-wads-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: texture-wads-artifact
+        path: texture-wads/*.wad
+
+  build_progs:
+    runs-on: ubuntu-latest # TODO: change this back to ubuntu-latest once that doesn't point to 22.04 anymore
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: bash -x .github/scripts/install_deps.sh
+    - name: Build progs
+      run: python3 build.py --compile-progs
+    - name: Upload progs-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: progs-artifact
+        path: lq1/*progs.dat
+
+  build_maps:
+    needs: build_wads
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 8
+      matrix:
+        map_dir: [brushmodels, dm, e0, e1, e2, e3, e4, misc]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: bash -x .github/scripts/install_deps.sh
+    - name: Download texture-wads-artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: texture-wads-artifact
+        path: texture-wads
+    - name: Build maps
+      run: |
+        cd lq1/maps
+        python3 compile_maps.py -d src/${{ matrix.map_dir }}
+    - name: Upload maps-artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: maps-artifact-${{ matrix.map_dir }}
+        if-no-files-found: error
+        path: |
+          lq1/maps/*.bsp
+          lq1/maps/*.lit
+
+  assemble_releases:
+    needs: [build_wads, build_progs, build_maps]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    # Download all the artifacts created so far
+    - name: Download texture-wads-artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: texture-wads-artifact
+        path: texture-wads
+    - name: Download progs-artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: progs-artifact
+        path: lq1/
+    - name: Download maps-artifacts
+      uses: actions/download-artifact@v3
+      with:
+        pattern: maps-artifact-*
+        path: lq1/maps/
+        merge-multiple: true
+    # Assemble the releases from the artifacts
+    - name: Install dependencies
+      run: bash -x .github/scripts/install_deps.sh
+    - name: Build releases
+      run: python3 build.py --build
+    # Upload the completed release artifacts
+    - name: Upload full
+      uses: actions/upload-artifact@v3
+      with:
+        name: full
+        path: releases/full
+    - name: Upload mod
+      uses: actions/upload-artifact@v3
+      with:
+        name: mod
+        path: releases/mod
+    - name: Upload lite
+      uses: actions/upload-artifact@v3
+      with:
+        name: lite
+        path: releases/lite
+    - name: Upload mod_lite
+      uses: actions/upload-artifact@v3
+      with:
+        name: mod_lite
+        path: releases/mod_lite
+    - name: Upload server
+      uses: actions/upload-artifact@v3
+      with:
+        name: server
+        path: releases/server
+    - name: Upload dev
+      uses: actions/upload-artifact@v3
+      with:
+        name: dev
+        path: releases/dev
+
+  upload_to_release_page:
+    if: github.event_name == 'release'
+    needs: assemble_releases
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        release_type: [full, mod, lite, mod_lite, server, dev]
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.release_type }}
+          path: releases/${{ matrix.release_type }}
+      - name: Create ZIP archives
+        run: |
+          mkdir -p releases/${{ matrix.release_type }}
+          cd releases
+          7z a -mx9 ${{ matrix.release_type }}.zip ${{ matrix.release_type }}
+      - name: Upload asset ${{ matrix.release_type }}.zip
+        uses: actions/upload-release-asset@v1
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: releases/${{ matrix.release_type }}.zip
+          asset_name:  ${{ matrix.release_type }}.zip
+          asset_content_type: application/zip

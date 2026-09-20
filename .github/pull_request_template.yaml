@@ -1,0 +1,44 @@
+name: "Pull Request"
+description: please replace "prefix" with one of the ones listed below
+title: "prefix: "
+labels: ["documentation", "bug"]
+body:
+- type: markdown
+  attributes:
+    value: |
+        ### Prefix
+        Note that before you open this Pull Request it should be titled to fit the same standards as the commit name standards. Among many prerequisites, part of that is to ensure you are prefixing the title to reflect the relevant component properly:
+        * `BUILD`: Modification of our build scripts and/or tools.
+        * `CI`: Modification of the GitHub Actions Pipeline(s).
+        * `GFX`: Modification of **game** (not map) textures.
+        * `GH`: Modifiation of any repository-related elements (screenshots, readme, etc.)
+        * `MAPS`: Modification of `.map` files.
+        * `MODELS`: Modification of models, both `.blend` and exported `.mdl`
+        * `QC`: Modification of QuakeC source code.
+        * `AUDIO`: Modification of game sound effects or music.
+        * `WADS`: Modification of **map** textures, to be packed into a `.wad` during the build process.
+
+        See "[CONTRIBUTING.md](LibreQuad/CONTRIBUTING.md)" for details.
+
+- type: checkboxes
+  id: type
+  attributes:
+    label: Operating System
+    description: Which OS are you running LibreWolf on?
+    options:
+    - label: audio
+    - label: gfx
+    - label: models
+    - label: quakec
+    - label: NixOS
+    - label: wads Linux
+    - label: BSD
+    - label: wip
+
+- type: textarea
+  id: description
+  attributes:
+    label: Description
+    description: Please describe the bug clearly.
+  validations:
+    required: true
